@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: ecom-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=ecomdb
+    networks:
+      - ecom-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ecom-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGO_URI=mongodb://172.23.234.47:27017/
+      - DB_NAME=ecomdb
+      - JWT_SECRET=a7f3d8c2e9a1b4f6e8d3c5a7b9e1f4d6c8a2e5f7b9d1c3e5a7f9b1d3e5f7c9a1b3d5
+      - FRONTEND_ORIGIN=http://localhost:3000
+    depends_on:
+      - mongodb
+    networks:
+      - ecom-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ecom-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - ecom-network
+
+volumes:
+  mongo-data:
+
+networks:
+  ecom-network:
+    driver: bridge

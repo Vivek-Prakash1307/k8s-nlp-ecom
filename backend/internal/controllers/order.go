@@ -46,7 +46,7 @@ func Checkout(c *gin.Context) {
         UserID: uid,
         Items: cart.Items,
         Total: total,
-        Status: "pending",
+        Status: "confirmed", // just for the temporary , when we install particualarly for the actaul payment gateway we will integrate that part 
         Address: body.Address,
         CreatedAt: time.Now().Unix(),
     }

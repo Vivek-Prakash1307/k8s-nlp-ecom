@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Vivek-Prakash1307/k8s-nlp-ecom/backend/internal/db"
@@ -12,13 +13,23 @@ import (
 )
 
 func main() {
-	godotenv.Load("../.env")
+	godotenv.Load()
 	r := gin.Default()
-	// connect db
+
+	// Connect DB
 	db.Connect()
-	// CORS
+
+	// CORS configuration
+	frontendOrigin := os.Getenv("FRONTEND_ORIGIN")
+
+	// Safety fallback if env missing or wrong formatted
+	if !strings.HasPrefix(frontendOrigin, "http://") &&
+		!strings.HasPrefix(frontendOrigin, "https://") {
+		frontendOrigin = "http://localhost:3000"
+	}
+
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{os.Getenv("FRONTEND_ORIGIN")},
+		AllowOrigins:     []string{frontendOrigin},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},

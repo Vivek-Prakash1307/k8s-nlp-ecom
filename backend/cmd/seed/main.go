@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	godotenv.Load("../.env")
+	godotenv.Load()
 	client := db.Connect()
 	coll := client.Database("ecomdb").Collection("products")
 	ctx := context.Background()

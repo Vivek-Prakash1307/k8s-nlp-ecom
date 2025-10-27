@@ -1,53 +1,86 @@
-import React, {useEffect, useState} from 'react';
-import API from '../api';
+import React, { useState, useEffect } from 'react';
+import { getProducts } from '../api';
 import ProductCard from '../components/ProductCard';
+import { toast } from 'react-toastify';
 
-export default function Products(){
+export default function Products() {
   const [products, setProducts] = useState([]);
-  const [sort, setSort] = useState('relevance');
-  const [q, setQ] = useState('');
-
-  useEffect(()=> {
-    fetchProducts();
-  }, [sort]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('relevance');
 
   const fetchProducts = async () => {
-    const res = await API.get('/api/products', { params: { sort, q }});
-    setProducts(res.data.products);
-  };
+    setLoading(true);
+    try {
+      const params = {};
+      if (searchQuery) params.q = searchQuery;
+      if (sortBy) params.sort = sortBy;
 
-  const addToCart = async (productId) => {
-    try{
-      await API.post('/api/cart/add', { productId, quantity: 1 });
-      alert('Added to cart');
-    }catch(err){
-      alert('Please login to add to cart');
+      const res = await getProducts(params);
+      setProducts(res.data.products || []);
+    } catch (error) {
+      toast.error('Failed to fetch products');
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const onSearch = (e) => {
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const handleSearch = (e) => {
     e.preventDefault();
     fetchProducts();
   };
 
   return (
     <div>
-      <div className="toolbar">
-        <form onSubmit={onSearch}>
-          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products"/>
-          <button>Search</button>
+      <div className="products-header">
+        <h1>🛍️ Discover Amazing Products</h1>
+        <form onSubmit={handleSearch} className="search-filter">
+          <input
+            type="text"
+            placeholder="Search for products..."
+            className="search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <select 
+            className="filter-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="relevance">Sort by Relevance</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="rating">Highest Rated</option>
+            <option value="popularity">Most Popular</option>
+          </select>
+          <button type="submit" className="btn-search">
+            Search 🔍
+          </button>
         </form>
-        <select value={sort} onChange={e=>setSort(e.target.value)}>
-          <option value="relevance">Relevance</option>
-          <option value="price_asc">Price low→high</option>
-          <option value="price_desc">Price high→low</option>
-          <option value="rating">Rating</option>
-          <option value="popularity">Popularity</option>
-        </select>
       </div>
-      <div className="grid">
-        {products.map(p => <ProductCard key={p.id || p._id} p={p} onAdd={addToCart} />)}
-      </div>
+
+      {loading ? (
+        <div className="loading">
+          <div className="spinner"></div>
+        </div>
+      ) : products.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">📦</div>
+          <h3>No products found</h3>
+          <p>Try adjusting your search or filters</p>
+        </div>
+      ) : (
+        <div className="products-grid">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
